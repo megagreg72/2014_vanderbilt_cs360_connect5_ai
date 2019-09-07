@@ -1,0 +1,86 @@
+CS 360
+Connect 5
+11/3/2014
+Brian Gauch
+
+For your convenience, and to stay DRY, because there seems to be some overlap between
+the requirements of the README and the requirements for the writeup,
+both are included in this file.
+
+***** USE *****
+
+To compile:
+>make
+
+To run against itself:
+>make run
+
+To run from controller:
+Just pass in like demo.py, no parameters
+e.g. 
+>python twogtp.py --white "./CF4 white" --black "./CF4 black" --games 1 --verbose 2
+
+**********
+
+
+***** IMPLEMENTATION *****
+
+-----STRUCTURE-----
+Monolithic C++ program in CF4.cpp
+
+Heuristic: recursive_DFS calls score_move at each level, which in turn has a helper function score_sequence.
+----------
+
+-----APPROACH / SPECIAL-----
+Because this program is C at heart, I couldn't help but make some preemptive optimizations.
+I actually have exactly one board where moves are done and undone during search, rather than creating and destroying boards - a ridiculously low memory overhead, although DFS already has a very low overhead.
+This should also save time creating and destroying boards.
+
+Because I only look at the area relevant to each move (see Evaluation fn below),
+my algorithm should remain fast on very large and/or high-dimensional boards.
+----------
+
+-----MOVE GENERATOR-----
+Moves represented with column numbers, 0 indexed.
+A move is legal if and only if the associated column is not full.
+----------
+
+-----MINIMAX SEARCH-----
+recursive_DFS is self-explanatory, except for the backtracking trick outlined in APPROACH.
+I actually never got around to implementing alpha-beta pruning, so it simply searches to constant depth 4.
+----------
+
+-----EVALUATION FUNCTION-----
+When looking at any particular sequence of 5 squares, which may be blank, have a white piece, or have a black piece, that sequence is threatening (for one player or the other) if and only if it is monochromatic.  That is, a win is not possible with those paricular 5 squares if both colors occupy at least one square.
+Furthermore, a 5 square sequence is more threatening if it has more of the color (not necessarily in a row).
+
+With this in mind, my heuristic function is fairly simple and intuitive;
+the move heuristic looks at all sequences that are ACTUAllY AFFECTED by a given move,
+rather than looking at the whole board,
+scores the sequences based on their length (int score[LEN] = {0,10,100,1000,10000};)
+and sums the scores.
+The state heuristic is simply a sum (subtraction for opponent's moves of course) of move heuristics for all the moves to transition to that state from the current state.  This allows for easy backtracking (see APPROACH above).
+
+Even without pruning, I was able to search to depth 4 with this heuristic well within time (~1 sec).
+When testing, it seemed fairly intelligent; the way it builds and blocks useful structures makes it appear to be planning ahead more than it really is.
+----------
+
+-----STRATEGY RULES-----
+I am not really sure what "strategy rules" is supposed to mean.
+I had no special rules, and simply maximized heuristic score.
+----------
+
+-----OVERALL STRUCTURE / STRATEGY-----
+See STRATEGY RULES.  Not much to say.
+----------
+
+**********
+
+***** TOURNAMENT RESULTS *****
+
+Of the people who participated, the numbers of wins were, in increasing order,
+0, 3, 4, 6, 7, 10.
+I had 4 wins, so I did about average.
+I think my biggest weakness was that I only searched to constant depth 4, since pruning was not implemented and I did not take into account time remaining online. I was surprised that my heuristic was good enough to get a fair number of wins despite that. I think this shows that board structure matters more than lookahead in this particular game, which makes sense because pieces never move once they are placed, so a move that looked good earlier will not often look bad later.
+
+**********
